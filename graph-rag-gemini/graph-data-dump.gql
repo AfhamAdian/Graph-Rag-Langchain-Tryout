@@ -1,0 +1,305 @@
+// Neo4j Cypher Queries to Insert Complete Medical Dummy Data
+
+// 1. Create Patient
+CREATE (p:Patient {
+  patientID: "PAT001",
+  name: "John Smith",
+  gender: "Male",
+  age: 45,
+  weight: 180,
+  height: 175,
+  heart_rate: 72,
+  blood_pressure: "120/80",
+  chronic_diseases: ["Hypertension", "Type 2 Diabetes"],
+  allergies: ["Penicillin", "Shellfish"],
+  blood_type: "O+",
+  past_surgeries: ["Appendectomy (2015)"],
+  major_events: ["Heart palpitations (2023)", "Emergency room visit for chest pain (2022)"],
+  last_updated: "2024-08-05T10:30:00Z",
+  lifestyle: ["Non-smoker", "Occasional alcohol", "Sedentary lifestyle", "High sodium diet"],
+  summary: "45-year-old male with controlled hypertension and type 2 diabetes. Recent concerns about cardiac symptoms.",
+  embedding: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+});
+
+// 2. Create Doctor
+CREATE (d:Doctor {
+  doctorID: "DOC001",
+  name: "Dr. Sarah Johnson",
+  specialty: "Cardiology",
+  embedding: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1]
+});
+
+// 3. Create Visit
+CREATE (v:Visit {
+  visitID: "VIS001",
+  visit_count: 1,
+  date: "2024-08-05T09:00:00Z",
+  visit_type: "routine",
+  chief_complaint: "Chest pain and shortness of breath during physical activity",
+  visit_summary: "Patient presents with exertional chest pain and dyspnea. Vital signs stable. Ordered ECG and cardiac enzymes.",
+  status: "completed",
+  embedding: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2]
+});
+
+// 4. Create Symptoms
+CREATE (s1:Symptoms {
+  name: "Chest Pain",
+  severity: "moderate",
+  duration: "2 weeks",
+  onset: "gradual",
+  description: "Substernal chest pain, described as pressure-like sensation",
+  location: "Central chest",
+  triggers: ["Physical exertion", "Climbing stairs"],
+  relieving_factors: ["Rest", "Sitting down"],
+  embedding: [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3]
+});
+
+CREATE (s2:Symptoms {
+  name: "Shortness of Breath",
+  severity: "mild",
+  duration: "2 weeks",
+  onset: "gradual",
+  description: "Difficulty breathing during physical activity",
+  location: "Chest",
+  triggers: ["Exercise", "Walking uphill"],
+  relieving_factors: ["Rest"],
+  embedding: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4]
+});
+
+// 5. Create Vitals
+CREATE (vt:Vitals {
+  vitalsID: "VIT001",
+  condition: "stable",
+  weight: "180 lbs",
+  height: "5'9\"",
+  bmi: 26.6,
+  temperature: "98.6°F",
+  heart_rate: 72,
+  blood_pressure: "135/85",
+  recorded_at: "2024-08-05T09:15:00Z",
+  summary: "Slightly elevated blood pressure, otherwise normal vitals",
+  embedding: [0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+});
+
+// 6. Create Test Batch
+CREATE (gt:GivenTests {
+  testBatchID: "TB001",
+  test_ids: ["TST001", "TST002", "TST003"],
+  test_names: ["ECG", "Troponin I", "Lipid Panel"],
+  ordered_date: "2024-08-05T09:30:00Z",
+  urgency: "routine",
+  summary: "Cardiac workup including ECG and cardiac enzymes",
+  embedding: [0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+});
+
+// 7. Create Test Results
+CREATE (tr1:TestResult {
+  testID: "TST001",
+  test_name: "ECG",
+  test_category: "cardiac",
+  test_result: "Normal sinus rhythm, no ST changes",
+  abnormal_flag: false,
+  severity: "normal",
+  test_date: "2024-08-05T10:00:00Z",
+  lab_name: "CardioLab Inc",
+  technician: "Tech Johnson",
+  embedding: [0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+});
+
+CREATE (tr2:TestResult {
+  testID: "TST002",
+  test_name: "Troponin I",
+  test_category: "lab",
+  test_result: "0.02 ng/mL",
+  abnormal_flag: false,
+  severity: "normal",
+  test_date: "2024-08-05T10:30:00Z",
+  lab_name: "Central Lab",
+  technician: "Lab Tech Smith",
+  embedding: [0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+});
+
+CREATE (tr3:TestResult {
+  testID: "TST003",
+  test_name: "Lipid Panel",
+  test_category: "lab",
+  test_result: "Total Cholesterol: 220 mg/dL, LDL: 140 mg/dL, HDL: 45 mg/dL",
+  abnormal_flag: true,
+  severity: "borderline",
+  test_date: "2024-08-05T10:30:00Z",
+  lab_name: "Central Lab",
+  technician: "Lab Tech Smith",
+  embedding: [1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+});
+
+// 8. Create Diagnosis
+CREATE (diag:Diagnosis {
+  diagnosisID: "DIAG001",
+  name: "Atypical Chest Pain",
+  brief_description: "Non-cardiac chest pain with normal cardiac workup",
+  detailed_description: "Patient presents with exertional chest pain. ECG and cardiac enzymes normal. Likely musculoskeletal or anxiety-related chest pain. Elevated cholesterol noted.",
+  confidence_level: "probable",
+  diagnosis_type: "primary",
+  severity: "mild",
+  embedding: [0.1, 0.3, 0.5, 0.7, 0.9, 0.2, 0.4, 0.6, 0.8, 1.0]
+});
+
+// 9. Create Prescription
+CREATE (presc:Prescription {
+  prescriptionID: "PRESC001",
+  prescribed_date: "2024-08-05T11:00:00Z",
+  status: "active",
+  total_duration: "30 days",
+  special_instructions: "Take with food to reduce stomach irritation",
+  embedding: [0.2, 0.4, 0.6, 0.8, 1.0, 0.1, 0.3, 0.5, 0.7, 0.9]
+});
+
+// 10. Create Medicines
+CREATE (m1:Medicine {
+  medicineID: "MED001",
+  name: "Atorvastatin",
+  dosage: "20mg",
+  frequency: "Once daily",
+  duration: "30 days",
+  instructions: "Take in the evening with dinner",
+  embedding: [0.3, 0.5, 0.7, 0.9, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
+});
+
+CREATE (m2:Medicine {
+  medicineID: "MED002",
+  name: "Ibuprofen",
+  dosage: "400mg",
+  frequency: "As needed",
+  duration: "7 days",
+  instructions: "Take with food for muscle pain, maximum 3 times daily",
+  embedding: [0.4, 0.6, 0.8, 1.0, 0.2, 0.3, 0.5, 0.7, 0.9, 0.1]
+});
+
+// 11. Create Doctor Advice
+CREATE (advice1:DoctorAdvice {
+  adviceID: "ADV001",
+  advice_type: "lifestyle",
+  text: "Increase physical activity gradually. Start with 15-minute walks daily and progress to 30 minutes of moderate exercise 5 days per week.",
+  priority: "medium",
+  followup_in_days: 30,
+  completion_status: "pending",
+  embedding: [0.5, 0.7, 0.9, 0.1, 0.3, 0.4, 0.6, 0.8, 1.0, 0.2]
+});
+
+CREATE (advice2:DoctorAdvice {
+  adviceID: "ADV002",
+  advice_type: "follow-up",
+  text: "Follow up in 4 weeks to reassess symptoms and review cholesterol management",
+  priority: "high",
+  followup_in_days: 28,
+  completion_status: "pending",
+  embedding: [0.6, 0.8, 1.0, 0.2, 0.4, 0.5, 0.7, 0.9, 0.1, 0.3]
+});
+
+// 12. Create Family History
+CREATE (fh:FamilyHistory {
+  familyHistoryID: "FH001",
+  relation: "father",
+  condition: ["Heart Disease", "Diabetes"],
+  current_status: "deceased",
+  summary: "Father had myocardial infarction at age 55, also had type 2 diabetes",
+  embedding: [0.7, 0.9, 0.1, 0.3, 0.5, 0.6, 0.8, 1.0, 0.2, 0.4]
+});
+
+// 13. Create Upload Document
+CREATE (upload:Upload {
+  uploadID: "UP001",
+  description: "Previous ECG from 2023",
+  extracted_text: "ECG Report: Normal sinus rhythm, rate 68 bpm, no acute changes. Slight left axis deviation.",
+  embedding: [0.8, 1.0, 0.2, 0.4, 0.6, 0.7, 0.9, 0.1, 0.3, 0.5]
+});
+
+// ====================================
+// CREATE RELATIONSHIPS
+// ====================================
+
+// Patient-Visit relationship
+MATCH (p:Patient {patientID: "PAT001"}), (v:Visit {visitID: "VIS001"})
+CREATE (p)-[:HAS_VISIT]->(v);
+
+// Visit-Symptoms relationships
+MATCH (v:Visit {visitID: "VIS001"}), (s1:Symptoms {name: "Chest Pain"})
+CREATE (v)-[:HAS_SYMPTOMS]->(s1);
+
+MATCH (v:Visit {visitID: "VIS001"}), (s2:Symptoms {name: "Shortness of Breath"})
+CREATE (v)-[:HAS_SYMPTOMS]->(s2);
+
+// Visit-Vitals relationship
+MATCH (v:Visit {visitID: "VIS001"}), (vt:Vitals {vitalsID: "VIT001"})
+CREATE (v)-[:HAS_VITALS]->(vt);
+
+// Visit-Tests relationship
+MATCH (v:Visit {visitID: "VIS001"}), (gt:GivenTests {testBatchID: "TB001"})
+CREATE (v)-[:ORDERED_TESTS]->(gt);
+
+// Tests-Results relationships
+MATCH (gt:GivenTests {testBatchID: "TB001"}), (tr1:TestResult {testID: "TST001"})
+CREATE (gt)-[:INCLUDES_TEST]->(tr1);
+
+MATCH (gt:GivenTests {testBatchID: "TB001"}), (tr2:TestResult {testID: "TST002"})
+CREATE (gt)-[:INCLUDES_TEST]->(tr2);
+
+MATCH (gt:GivenTests {testBatchID: "TB001"}), (tr3:TestResult {testID: "TST003"})
+CREATE (gt)-[:INCLUDES_TEST]->(tr3);
+
+// Visit-Diagnosis relationship
+MATCH (v:Visit {visitID: "VIS001"}), (diag:Diagnosis {diagnosisID: "DIAG001"})
+CREATE (v)-[:DIAGNOSED_WITH]->(diag);
+
+// Test Results support Diagnosis
+MATCH (tr1:TestResult {testID: "TST001"}), (diag:Diagnosis {diagnosisID: "DIAG001"})
+CREATE (tr1)-[:SUPPORTS]->(diag);
+
+MATCH (tr2:TestResult {testID: "TST002"}), (diag:Diagnosis {diagnosisID: "DIAG001"})
+CREATE (tr2)-[:SUPPORTS]->(diag);
+
+// Visit-Prescription relationship
+MATCH (v:Visit {visitID: "VIS001"}), (presc:Prescription {prescriptionID: "PRESC001"})
+CREATE (v)-[:PRESCRIBED]->(presc);
+
+// Prescription-Medicine relationships (using CONTAINS)
+MATCH (presc:Prescription {prescriptionID: "PRESC001"}), (m1:Medicine {medicineID: "MED001"})
+CREATE (presc)-[:CONTAINS]->(m1);
+
+MATCH (presc:Prescription {prescriptionID: "PRESC001"}), (m2:Medicine {medicineID: "MED002"})
+CREATE (presc)-[:CONTAINS]->(m2);
+
+// Visit-Advice relationships
+MATCH (v:Visit {visitID: "VIS001"}), (advice1:DoctorAdvice {adviceID: "ADV001"})
+CREATE (v)-[:RECEIVED_ADVICE]->(advice1);
+
+MATCH (v:Visit {visitID: "VIS001"}), (advice2:DoctorAdvice {adviceID: "ADV002"})
+CREATE (v)-[:RECEIVED_ADVICE]->(advice2);
+
+// Visit-Doctor relationship
+MATCH (v:Visit {visitID: "VIS001"}), (d:Doctor {doctorID: "DOC001"})
+CREATE (v)-[:CONDUCTED_BY]->(d);
+
+// Doctor-Prescription relationship
+MATCH (presc:Prescription {prescriptionID: "PRESC001"}), (d:Doctor {doctorID: "DOC001"})
+CREATE (presc)-[:PRESCRIBED_BY]->(d);
+
+// Patient-FamilyHistory relationship
+MATCH (p:Patient {patientID: "PAT001"}), (fh:FamilyHistory {familyHistoryID: "FH001"})
+CREATE (p)-[:HAS_FAMILY_HISTORY]->(fh);
+
+// Visit-Upload relationship
+MATCH (v:Visit {visitID: "VIS001"}), (upload:Upload {uploadID: "UP001"})
+CREATE (v)-[:HAS_UPLOAD]->(upload);
+
+// Patient allergies to medicines
+MATCH (p:Patient {patientID: "PAT001"}), (m1:Medicine {medicineID: "MED001"})
+WHERE "Penicillin" IN p.allergies
+CREATE (p)-[:ALLERGIC_TO {allergen: "Penicillin"}]->(m1);
+
+// Symptoms suggest diagnosis
+MATCH (s1:Symptoms {name: "Chest Pain"}), (diag:Diagnosis {diagnosisID: "DIAG001"})
+CREATE (s1)-[:SUGGESTS]->(diag);
+
+MATCH (s2:Symptoms {name: "Shortness of Breath"}), (diag:Diagnosis {diagnosisID: "DIAG001"})
+CREATE (s2)-[:SUGGESTS]->(diag);

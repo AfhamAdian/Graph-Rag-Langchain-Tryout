@@ -1,0 +1,75 @@
+=== PATIENT RECORD ===
+#PATIENT_ID: PAT123456
+**Name:** Afham Adian  
+**Gender:** Male  
+**Age:** 32  
+**Blood Type:** O+  
+**Last Updated:** November 15, 2023  
+
+## Medical Overview
+Healthy male with no chronic conditions. Allergic to penicillin and shellfish. Had appendectomy in 2015. Regular exerciser (3-4x/week), non-smoker. 
+
+||VITALS||
+- Weight: 78 kg
+- Height: 175 cm  
+- BMI: 25.5  
+- BP: 120/80  
+- Resting HR: 72  
+- Temp: 36.8°C  
+
+**Allergies:**  
+1. Penicillin (rash, difficulty breathing)  
+2. Shellfish (nausea, hives)  
+
+**Medications:**  
+- Multivitamin (daily)  
+- Omega-3 supplement  
+
+=== VISIT RECORD ===
+#VISIT_ID: VIS987654  
+**Date:** November 15, 2023 @ 9:15 AM  
+**Type:** Routine physical  
+**Status:** Completed  
+
+**Subjective:**  
+"Just here for my annual checkup. Feeling well overall, though I've noticed some occasional heartburn after eating spicy foods."  
+
+**Objective:**  
+- Physical exam unremarkable  
+- No concerning skin lesions  
+- Reflexes 2+ and symmetric  
+
+**Assessment:**  
+1. Preventive health maintenance (Z23)  
+2. Mild GERD (suspected)  
+
+**Plan:**  
+1. Recommend OTC antacids PRN  
+2. Dietary counseling provided  
+3. Lab work ordered:  
+   - CBC  
+   - Lipid panel  
+   - Basic metabolic panel  
+
+**Doctor's Notes:**  
+"Pleasant 32yo male in no acute distress. All vitals WNL. Suggested reducing late-night meals to address heartburn symptoms. To return in 1 year or PRN."  
+should take napa next 3 days if there is pain.
+
+=== LIFESTYLE DATA ===
+**Exercise:**  
+- Strength training 3x/week  
+- Soccer on weekends  
+
+**Diet:**  
+- Pescatarian (no red meat)  
+- Coffee: 2 cups/day  
+
+**Substance Use:**  
+- Alcohol: 2-3 drinks/month  
+- Tobacco: Never  
+- Recreational drugs: None  
+
+=== FAMILY HISTORY ===
+- Father: Hypertension (age 55)  
+- Mother: Breast cancer (age 62)  
+- Paternal grandfather: Type 2 Diabetes  

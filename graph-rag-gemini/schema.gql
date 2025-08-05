@@ -1,0 +1,376 @@
+// Updated for Neo4j with datetime fields
+
+// ================================
+// CORE ENTITIES
+// ================================
+
+Patient {
+  patientID: STRING,
+  name: STRING,
+  gender: STRING,
+  age: INTEGER,
+  weight: INTEGER,
+  height: INTEGER,
+  heart_rate: INTEGER,
+  blood_pressure: STRING,
+  chronic_diseases: [STRING],
+  allergies: [STRING],
+  blood_type: STRING,
+  major_events: [STRING],
+  last_updated: STRING,
+  lifestyle: [STRING], // smoking, alcohol, physical_activity, diet_type
+  summary: STRING,
+  // Optional for patient summary RAG
+  embedding: [FLOAT]
+}
+
+Visit {
+  visitID: STRING,
+  visit_count: INTEGER,
+  date: STRING,
+  visit_type: STRING, // routine, emergency, follow-up, consultation
+  chief_complaint: STRING,
+  visit_summary: STRING,
+  status: STRING, // completed, in-progress, cancelled
+  embedding: [FLOAT] // For visit summary search
+}
+
+// ================================
+// CLINICAL DATA ENTITIES
+// ================================
+
+Symptoms {
+  name: STRING,
+  severity: STRING, // mild, moderate, severe
+  duration: STRING,
+  onset: STRING, // sudden, gradual
+  description: STRING,
+  location: STRING, // if applicable
+  triggers: [STRING],
+  relieving_factors: [STRING],
+  embedding: [FLOAT] // Critical for symptom matching
+}
+
+Vitals {
+  vitalsID: STRING,
+  condition: STRING,
+  weight: STRING,
+  height: STRING,
+  bmi: FLOAT,
+  temperature: STRING,
+  heart_rate: INTEGER,
+  blood_pressure: STRING,
+  recorded_at: STRING,
+  // Minimal embedding for abnormal patterns only
+  summary: STRING,
+  embedding: [FLOAT]
+}
+
+// ================================
+// DIAGNOSTIC ENTITIES
+// ================================
+
+GivenTests {
+  testBatchID: STRING,
+  test_ids: [STRING],
+  test_names: [STRING],
+  ordered_date: STRING,
+  urgency: STRING, // routine, urgent, stat
+  summary: STRING,
+  embedding: [FLOAT] // For test reasoning search
+}
+
+TestResult {
+  testID: STRING,
+  test_name: STRING,
+  test_category: STRING, // lab, imaging, biopsy, etc.
+  test_result: STRING,
+  abnormal_flag: BOOLEAN,
+  severity: STRING, // normal, borderline, abnormal, critical
+  test_date: STRING,
+  lab_name: STRING,
+  technician: STRING,
+  embedding: [FLOAT] // For result interpretation search
+}
+
+Diagnosis {
+  diagnosisID: STRING,
+  name: STRING,
+  brief_description: STRING,
+  detailed_description: STRING,
+  confidence_level: STRING, // confirmed, probable, suspected, ruled-out
+  diagnosis_type: STRING, // primary, secondary, differential
+  severity: STRING,
+  embedding: [FLOAT] // Critical for diagnosis matching
+}
+
+// ================================
+// TREATMENT ENTITIES
+// ================================
+
+Prescription {
+  prescriptionID: STRING,
+  prescribed_date: STRING,
+  status: STRING, // active, completed, discontinued, on-hold
+  total_duration: STRING,
+  special_instructions: STRING,
+  embedding: [FLOAT] // For prescription pattern search
+}
+
+Medicine {
+  medicineID: STRING,
+  name: STRING,
+  dosage: STRING,
+  frequency: STRING,
+  duration: STRING,
+  instructions: STRING,
+  embedding: [FLOAT] // For drug interaction and alternative search
+}
+
+DoctorAdvice {
+  adviceID: STRING,
+  advice_type: STRING, // lifestyle, follow-up, precaution, emergency
+  text: STRING,
+  priority: STRING, // low, medium, high, critical
+  followup_in_days: INTEGER,
+  completion_status: STRING, // pending, completed, overdue
+  embedding: [FLOAT] // For advice similarity search
+}
+
+// ================================
+// HEALTHCARE PROVIDER ENTITIES
+// ================================
+
+Doctor {
+  doctorID: STRING,
+  name: STRING,
+  specialty: STRING,
+  embedding: [FLOAT] // For doctor expertise matching
+}
+// ================================
+// MEDICAL HISTORY ENTITIES
+// ================================
+
+FamilyHistory {
+  familyHistoryID: STRING,
+  relation: STRING, // parent, sibling, grandparent
+  condition: [STRING],
+  current_status: STRING, // alive, deceased
+  summary: STRING,
+  embedding: [FLOAT] // For genetic risk assessment
+}
+
+// ================================
+// DOCUMENT MANAGEMENT
+// ================================
+
+Upload {
+  uploadID: STRING,
+  description: STRING,
+  extracted_text: STRING,
+  embedding: [FLOAT] // For document content search
+}
+
+// ================================
+// RELATIONSHIPS
+// ================================
+
+// Core Patient Flow
+(:Patient)-[:HAS_VISIT]->(:Visit)
+(:Visit)-[:HAS_SYMPTOMS]->(:Symptoms)
+(:Visit)-[:HAS_VITALS]->(:Vitals)
+(:Visit)-[:ORDERED_TESTS]->(:GivenTests)
+(:Visit)-[:DIAGNOSED_WITH]->(:Diagnosis)
+(:Visit)-[:PRESCRIBED]->(:Prescription)
+(:Visit)-[:RECEIVED_ADVICE]->(:DoctorAdvice)
+(:Visit)-[:CONDUCTED_BY]->(:Doctor)
+(:Visit)-[:AT_HOSPITAL]->(:Hospital)
+(:Visit)-[:HAS_UPLOAD]->(:Upload)
+
+// Test Relationships
+(:GivenTests)-[:INCLUDES_TEST]->(:TestResult)
+(:TestResult)-[:SUPPORTS]->(:Diagnosis)
+(:TestResult)-[:CONTRADICTS]->(:Diagnosis)
+(:TestResult)-[:INDICATES]->(:Symptoms)
+
+// Diagnostic Relationships
+(:Symptoms)-[:SUGGESTS]->(:Diagnosis)
+(:Symptoms)-[:RULES_OUT]->(:Diagnosis)
+(:Diagnosis)-[:TREATED_BY]->(:Medicine)
+(:Diagnosis)-[:REQUIRES_FOLLOWUP]->(:DoctorAdvice)
+
+// Treatment Relationships
+//(:Prescription)-[:CONTAINS]->(:Medicine)
+(:Prescription)-[:PRESCRIBED_BY]->(:Doctor)
+(:Patient)-[:ALLERGIC_TO]->(:Medicine)
+(:Medicine)-[:INTERACTS_WITH]->(:Medicine)
+
+// Temporal Relationships
+(:Visit)-[:FOLLOWS]->(:Visit)
+(:Visit)-[:NEXT_VISIT]->(:Visit)
+
+// Advanced Clinical Relationships
+// (:Diagnosis)-[:COMPLICATES]->(:Diagnosis)
+// (:Diagnosis)-[:CAUSED_BY]->(:Diagnosis)
+// (:Symptoms)-[:ASSOCIATED_WITH]->(:Symptoms)
+// (:TestResult)-[:CORRELATES_WITH]->(:TestResult)
+
+
+
+// ================================
+// RAG OPTIMIZATION NOTES
+// ================================
+
+/*
+EMBEDDING STRATEGY:
+
+HIGH PRIORITY (Always embed):
+- Symptoms: Critical for symptom matching and differential diagnosis
+- Diagnosis: Essential for similar case finding
+- TestResult.result_interpretation: Key for abnormal result analysis
+- DoctorAdvice: Important for treatment recommendation similarity
+- Medicine: Crucial for drug interaction and alternative finding
+
+MEDIUM PRIORITY (Contextual embedding):
+- Visit.visit_summary: Useful for case similarity
+- Patient.summary: Only if rich clinical summary exists
+- Upload.extracted_text: Important for document search
+- MedicalHistory: Valuable for pattern recognition
+
+LOW PRIORITY (Optional embedding):
+- Vitals: Only embed if looking for vital sign patterns
+- Prescription: Only if analyzing prescription patterns
+- Doctor: Only for expertise matching
+
+AVOID EMBEDDING:
+- IDs, dates, structured numeric data
+- Simple categorical fields
+- Contact information
+
+VECTOR SEARCH USE CASES:
+1. Similar symptom patterns
+2. Differential diagnosis suggestions
+3. Treatment protocol recommendations
+4. Drug interaction checking
+5. Case-based reasoning
+6. Clinical decision support
+7. Medical literature matching
+*/
+
+
+// Patient embedding index
+CREATE VECTOR INDEX patient_embedding IF NOT EXISTS
+FOR (n:Patient)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Visit embedding index
+CREATE VECTOR INDEX visit_embedding IF NOT EXISTS
+FOR (n:Visit)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Symptoms embedding index
+CREATE VECTOR INDEX symptoms_embedding IF NOT EXISTS
+FOR (n:Symptoms)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Vitals embedding index
+CREATE VECTOR INDEX vitals_embedding IF NOT EXISTS
+FOR (n:Vitals)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// GivenTests embedding index
+CREATE VECTOR INDEX given_tests_embedding IF NOT EXISTS
+FOR (n:GivenTests)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// TestResult embedding index
+CREATE VECTOR INDEX test_result_embedding IF NOT EXISTS
+FOR (n:TestResult)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Diagnosis embedding index
+CREATE VECTOR INDEX diagnosis_embedding IF NOT EXISTS
+FOR (n:Diagnosis)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Prescription embedding index
+CREATE VECTOR INDEX prescription_embedding IF NOT EXISTS
+FOR (n:Prescription)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Medicine embedding index
+CREATE VECTOR INDEX medicine_embedding IF NOT EXISTS
+FOR (n:Medicine)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// DoctorAdvice embedding index
+CREATE VECTOR INDEX doctor_advice_embedding IF NOT EXISTS
+FOR (n:DoctorAdvice)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Doctor embedding index
+CREATE VECTOR INDEX doctor_embedding IF NOT EXISTS
+FOR (n:Doctor)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// FamilyHistory embedding index
+CREATE VECTOR INDEX family_history_embedding IF NOT EXISTS
+FOR (n:FamilyHistory)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
+
+// Upload embedding index
+CREATE VECTOR INDEX upload_embedding IF NOT EXISTS
+FOR (n:Upload)
+ON n.embedding
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 1536,
+  `vector.similarity_function`: 'cosine'
+}};
