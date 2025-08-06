@@ -12,13 +12,6 @@ from langchain.schema import Document
 from langchain.agents import initialize_agent, AgentType
 from langchain.tools import Tool
 
-# from langchain.schema import SystemMessage
-# from langchain.schema.output_parser import StrOutputParser
-# from langchain_core.prompts import ChatPromptTemplate
-# from langchain.schema.runnable import RunnableLambda
-# from langchain.agents import initialize_agent, AgentType
-# from langchain.tools import Tool
-
 load_dotenv()
 
 graph = Neo4jGraph(
@@ -28,12 +21,6 @@ graph = Neo4jGraph(
 )
 
 print("Connected to Neo4j database")
-# print(graph.schema)
-# results = graph.query("MATCH (n) RETURN n LIMIT 3")
-# print(results)
-
-
-
 
 # connect to gemini
 if "GOOGLE_API_KEY" not in os.environ:
@@ -57,27 +44,11 @@ embeddings = GoogleGenerativeAIEmbeddings(
 )
 print("Embeddings model initialized")
 
-# Initialize Neo4j vector store
-# vector_store = Neo4jVector.from_existing_graph(
-#     embedding=embeddings,
-#     url=os.getenv("NEO4J_URL"),
-#     username=os.getenv("NEO4J_USERNAME"),
-#     password=os.getenv("NEO4J_PASSWORD"),
-#     index_name="visit_embeddings",
-#     node_label="Visit",
-#     text_node_properties=["text"],
-#     embedding_node_property="embedding"
-# )
-# print("Vector store initialized")
-
-
 # Read the data from data.txt
 data_file_path = "data.txt"
 with open(data_file_path, "r", encoding="utf-8") as file:
     data = file.read()
 print("Data read from data.txt")
-# print(data)
-
 
 schema = """
 Patient {
@@ -286,10 +257,6 @@ Upload {
 (:Visit)-[:NEXT_VISIT]->(:Visit)
 """ 
 
-
-
-
-
 def create_embedding_text(node_type: str, node_data: dict) -> str:
     """
     Create meaningful text for embedding based on node type and data
@@ -452,141 +419,11 @@ def generate_embeddings_for_json(json_data: dict) -> dict:
                         updated_data[node_type]["embedding"] = embedding_vector
                         print(f"✅ Generated embedding for {node_type}")
                     except Exception as e:
+                        print(f"❌ Error generating embedding for {node_type}: {str(e)}")
                         updated_data[node_type]["embedding"] = None
     
     return updated_data
 
-def update_embeddings_in_neo4j():
-    """
-    Update embeddings for existing nodes in Neo4j database
-    """
-    embedding_queries = [
-        {
-            "label": "Patient",
-            "text_query": """
-            MATCH (p:Patient) 
-            WHERE p.embedding IS NULL
-            RETURN p.patientID as id, p.name as name, p.summary as summary, 
-                   p.chronic_diseases as chronic_diseases, p.allergies as allergies,
-                   p.lifestyle as lifestyle, p.age as age, p.gender as gender
-            """,
-            "update_query": """
-            MATCH (p:Patient {patientID: $id})
-            SET p.embedding = $embedding
-            """
-        },
-        {
-            "label": "Visit",
-            "text_query": """
-            MATCH (v:Visit) 
-            WHERE v.embedding IS NULL
-            RETURN v.visitID as id, v.visit_type as visit_type, 
-                   v.chief_complaint as chief_complaint, v.visit_summary as visit_summary
-            """,
-            "update_query": """
-            MATCH (v:Visit {visitID: $id})
-            SET v.embedding = $embedding
-            """
-        },
-        {
-            "label": "Symptoms",
-            "text_query": """
-            MATCH (s:Symptoms) 
-            WHERE s.embedding IS NULL
-            RETURN s.name as name, s.severity as severity, s.duration as duration,
-                   s.description as description, s.location as location,
-                   id(s) as id
-            """,
-            "update_query": """
-            MATCH (s:Symptoms)
-            WHERE id(s) = $id
-            SET s.embedding = $embedding
-            """
-        },
-        {
-            "label": "Diagnosis",
-            "text_query": """
-            MATCH (d:Diagnosis) 
-            WHERE d.embedding IS NULL
-            RETURN d.diagnosisID as id, d.name as name, d.brief_description as brief_description,
-                   d.detailed_description as detailed_description, d.confidence_level as confidence_level,
-                   d.severity as severity
-            """,
-            "update_query": """
-            MATCH (d:Diagnosis {diagnosisID: $id})
-            SET d.embedding = $embedding
-            """
-        },
-        {
-            "label": "Medicine",
-            "text_query": """
-            MATCH (m:Medicine) 
-            WHERE m.embedding IS NULL
-            RETURN m.medicineID as id, m.name as name, m.dosage as dosage,
-                   m.frequency as frequency, m.duration as duration, m.instructions as instructions
-            """,
-            "update_query": """
-            MATCH (m:Medicine {medicineID: $id})
-            SET m.embedding = $embedding
-            """
-        },
-        {
-            "label": "DoctorAdvice",
-            "text_query": """
-            MATCH (da:DoctorAdvice) 
-            WHERE da.embedding IS NULL
-            RETURN da.adviceID as id, da.advice_type as advice_type,
-                   da.text as text, da.priority as priority
-            """,
-            "update_query": """
-            MATCH (da:DoctorAdvice {adviceID: $id})
-            SET da.embedding = $embedding
-            """
-        }
-    ]
-    
-    for query_set in embedding_queries:
-        try:
-            print(f"\n🔄 Processing {query_set['label']} embeddings...")
-            
-            # Get nodes without embeddings
-            results = graph.query(query_set["text_query"])
-            
-            for result in results:
-                # Create text for embedding based on node type
-                node_data = dict(result)
-                node_id = node_data.pop('id')
-                
-                text_for_embedding = create_embedding_text(query_set['label'], node_data)
-                
-                if text_for_embedding.strip():
-                    try:
-                        # Generate embedding
-                        embedding_vector = embeddings.embed_query(text_for_embedding)
-                        
-                        # Update node with embedding
-                        graph.query(
-                            query_set["update_query"],
-                            {"id": node_id, "embedding": embedding_vector}
-                        )
-                        
-                        print(f"✅ Updated {query_set['label']} embedding for ID: {node_id}")
-                        
-                    except Exception as e:
-                        print(f"❌ Error updating {query_set['label']} ID {node_id}: {str(e)}")
-                        
-        except Exception as e:
-            print(f"❌ Error processing {query_set['label']}: {str(e)}")
-
-
-
-
-
-
-
-
-
-# Function to split data according to schema
 def split_according_to_schema(data: str) -> str:
     """
     Split the patient data according to the defined schema and return JSON
@@ -610,6 +447,7 @@ def split_according_to_schema(data: str) -> str:
         5. Include all applicable sections: Patient, Visit, Vitals, Symptoms, FamilyHistory, etc.
         6. Return ONLY the JSON object, no additional text
         7. For arrays, extract multiple items if present in the data
+        8. DO NOT include embedding fields in the JSON - they will be added later
 
         Expected JSON structure:
         {{
@@ -625,8 +463,6 @@ def split_according_to_schema(data: str) -> str:
         # Use the model to extract structured data
         response = model.invoke(extraction_prompt)
         extracted_data = response.content
-        # print("Extracted Data: ") 
-        # print(extracted_data)
         return extracted_data  # Always return the extracted JSON string
 
     except Exception as e:
@@ -738,53 +574,147 @@ def validate_cypher_code(cypher_code: str) -> str:
     except Exception as e:
         return f"Error validating Cypher code: {str(e)}"
 
+def update_embeddings_from_json(embedded_json: dict):
+    """
+    Update embeddings for nodes in Neo4j using the embedded JSON data
+    """
+    print("\n🔄 Starting embedding updates...")
+    
+    # Define node types and their ID fields
+    node_mappings = {
+        "Patient": {"id_field": "patientID", "label": "Patient"},
+        "Visit": {"id_field": "visitID", "label": "Visit"},
+        "Vitals": {"id_field": "vitalsID", "label": "Vitals"},
+        "GivenTests": {"id_field": "testBatchID", "label": "GivenTests"},
+        "TestResult": {"id_field": "testID", "label": "TestResult"},
+        "Diagnosis": {"id_field": "diagnosisID", "label": "Diagnosis"},
+        "Prescription": {"id_field": "prescriptionID", "label": "Prescription"},
+        "Medicine": {"id_field": "medicineID", "label": "Medicine"},
+        "DoctorAdvice": {"id_field": "adviceID", "label": "DoctorAdvice"},
+        "Doctor": {"id_field": "doctorID", "label": "Doctor"},
+        "FamilyHistory": {"id_field": "familyHistoryID", "label": "FamilyHistory"},
+        "Upload": {"id_field": "uploadID", "label": "Upload"}
+    }
+    
+    for node_type, mapping in node_mappings.items():
+        if node_type in embedded_json:
+            node_data = embedded_json[node_type]
+            
+            # Handle both single nodes and arrays
+            nodes_to_process = node_data if isinstance(node_data, list) else [node_data]
+            
+            for node in nodes_to_process:
+                if "embedding" in node and node["embedding"] is not None:
+                    node_id = node.get(mapping["id_field"])
+                    if node_id:
+                        try:
+                            # Update embedding for the node
+                            update_query = f"""
+                            MATCH (n:{mapping["label"]} {{{mapping["id_field"]}: $id}})
+                            SET n.embedding = $embedding
+                            """
+                            
+                            graph.query(update_query, {
+                                "id": node_id,
+                                "embedding": node["embedding"]
+                            })
+                            
+                            print(f"✅ Updated embedding for {node_type} ID: {node_id}")
+                            
+                        except Exception as e:
+                            print(f"❌ Error updating embedding for {node_type} ID {node_id}: {str(e)}")
+    
+    # Handle Symptoms separately (they don't have a unique ID field, use internal Neo4j id)
+    if "Symptoms" in embedded_json:
+        symptoms_data = embedded_json["Symptoms"]
+        symptoms_list = symptoms_data if isinstance(symptoms_data, list) else [symptoms_data]
+        
+        for i, symptom in enumerate(symptoms_list):
+            if "embedding" in symptom and symptom["embedding"] is not None:
+                try:
+                    # Find symptoms by name and update embedding
+                    symptom_name = symptom.get("name", "")
+                    if symptom_name:
+                        update_query = """
+                        MATCH (s:Symptoms {name: $name})
+                        SET s.embedding = $embedding
+                        """
+                        
+                        graph.query(update_query, {
+                            "name": symptom_name,
+                            "embedding": symptom["embedding"]
+                        })
+                        
+                        print(f"✅ Updated embedding for Symptoms: {symptom_name}")
+                        
+                except Exception as e:
+                    print(f"❌ Error updating embedding for Symptoms[{i}]: {str(e)}")
 
 
 
 
+# ====== MAIN WORKFLOW EXECUTION ======
+print("\n" + "="*60)
+print("STARTING MEDICAL DATA PROCESSING WORKFLOW")
+print("="*60)
+
+# Step 1: Extract JSON from raw data
+print("\n📝 Step 1: Extracting structured JSON from raw data...")
 result = split_according_to_schema(data)
-print("Result from split_according_to_schema:")
 
 try:
-  # Remove leading/trailing triple backticks and 'json' if present
-  cleaned_result = result.strip()
-  if cleaned_result.startswith("```json"):
-      cleaned_result = cleaned_result[len("```json"):].strip()
-  if cleaned_result.startswith("```"):
-      cleaned_result = cleaned_result[len("```"):].strip()
-  if cleaned_result.endswith("```"):
-      cleaned_result = cleaned_result[:-len("```")].strip()
-  result_json = json.loads(cleaned_result)
-  # print("Result as JSON:")
-  # print(json.dumps(result_json, indent=2))
+    # Clean the JSON result
+    cleaned_result = result.strip()
+    if cleaned_result.startswith("```json"):
+        cleaned_result = cleaned_result[len("```json"):].strip()
+    if cleaned_result.startswith("```"):
+        cleaned_result = cleaned_result[len("```"):].strip()
+    if cleaned_result.endswith("```"):
+        cleaned_result = cleaned_result[:-len("```")].strip()
+    
+    result_json = json.loads(cleaned_result)
+    print("✅ JSON extraction successful")
+    
 
-except json.JSONDecodeError:
-  print("Failed to parse result as JSON.")
+    # Step 2: Generate embeddings for the JSON
+    print("\n🔮 Step 2: Generating embeddings for extracted data...")
+    embedded_json = generate_embeddings_for_json(result_json)
+     
+    # Save embedded JSON
+    with open("extracted_data_with_embeddings.json", "w", encoding="utf-8") as f:
+        json.dump(embedded_json, f, ensure_ascii=False, indent=2)
+    print("✅ Embedded JSON saved to extracted_data_with_embeddings.json")
 
+    
+    # Step 3: Generate Cypher code from original JSON (without embeddings)
+    print("\n⚙️ Step 3: Generating Cypher code from original JSON...")
+    cypher_code = generate_cypher_code(cleaned_result)
+    cypher_code = validate_cypher_code(cypher_code)
+    print("✅ Cypher code generated and validated")
+    
 
-
-
-
-data_json = cleaned_result
-embedded_json = generate_embeddings_for_json(json.loads(data_json))
-print("Data with embeddings generated")
-with open("extracted_data_with_embeddings.json", "w", encoding="utf-8") as f:
-  json.dump(embedded_json, f, ensure_ascii=False, indent=2)
-print("Embedded JSON written to extracted_data_with_embeddings.json")
-# print(embedded_json)
-
-cypher_code = generate_cypher_code(data_json)
-cypher_code = validate_cypher_code(cypher_code)
-print("Final Code for insertion:")
-# print(cypher_code)
-
-
-# Run the generated Cypher code to insert data into Neo4j
-try:
-    insertion_result = graph.query(cypher_code)
-    print("Data inserted into Neo4j. Insertion result:")
-    print(insertion_result)
+    # Step 4: Execute Cypher to insert nodes and relationships
+    print("\n💾 Step 4: Inserting nodes and relationships into Neo4j...")
+    try:
+        insertion_result = graph.query(cypher_code)
+        print("✅ Data inserted into Neo4j successfully")
+        print("Insertion result:", insertion_result)
+    except Exception as e:
+        print(f"❌ Error inserting data into Neo4j: {str(e)}")
+        # Don't continue if insertion failed
+        exit(1)
+    
+    
+    # Step 5: Update embeddings using embedded JSON
+    print("\n🎯 Step 5: Updating embeddings in Neo4j...")
+    update_embeddings_from_json(embedded_json)
+    print("✅ Embedding updates completed")
+    
+    print("\n" + "="*60)
+    print("WORKFLOW COMPLETED SUCCESSFULLY!")
+    print("="*60)
+    
+except json.JSONDecodeError as e:
+    print(f"❌ Failed to parse result as JSON: {str(e)}")
 except Exception as e:
-    print(f"Error inserting data into Neo4j: {str(e)}")
-
-
+    print(f"❌ Workflow failed with error: {str(e)}")
